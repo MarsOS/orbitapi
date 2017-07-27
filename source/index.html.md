@@ -98,15 +98,15 @@ curl -X GET "http://example.com/orbitapi/info/stats"
   "uniquePackages": 42,
   "uptime": 86400,
   "availableArches": [
-    "amd64",
-    "i368"
+    "x86_64",
+    "i386"
   ],
   "arches": {
-    "amd64": {
+    "x86_64": {
       "packages": 84,
       "uniquePackages": 42,
     },
-    "i368": {
+    "i386": {
       "packages": 80,
       "uniquePackages": 40,
     }
@@ -181,10 +181,10 @@ curl -X GET "http://example.com/orbitapi/meta?package=example-package"
 ```json
 {
   "package": "example-package",
-  "arches": ["amd64", "i368"],
+  "arches": ["x86_64", "i386"],
   "versions": {
-    "amd64": ["1.0.0", "1.0.2"],
-    "i368": ["1.0.0", "1.0.2", "1.0.2-1"]
+    "x86_64": ["1.0.0", "1.0.2"],
+    "i386": ["1.0.0", "1.0.2", "1.0.2-1"]
   }
 }
 ```
@@ -218,7 +218,7 @@ curl -X GET "http://example.com/orbitapi/meta/arches?package=example-package"
 ```
 
 ```json
-["amd64", "i368"]
+["x86_64", "i386"]
 ```
 > For the above example of `example-package`
 
@@ -236,13 +236,13 @@ name | package name you want to query
 ## Available Versions
 
 ```shell
-curl -X GET "http://example.com/orbitapi/meta/versions?package=example-package&arch=i368"
+curl -X GET "http://example.com/orbitapi/meta/versions?package=example-package&arch=i386"
 ```
 
 ```json
 ["1.0.0", "1.0.2", "1.0.2-1"]
 ```
-> For the above example of `example-package` with `arch=i368`
+> For the above example of `example-package` with `arch=i386`
 
 `GET /orbitapi/meta/versions`
 
@@ -259,7 +259,7 @@ arch | requested architecture
 ## Package Size
 
 ```shell
-curl -X GET "http://example.com/orbitapi/meta/versions?package=example-package&arch=i368&version=1.0.2"
+curl -X GET "http://example.com/orbitapi/meta/versions?package=example-package&arch=i386&version=1.0.2"
 ```
 
 ```json
@@ -301,7 +301,7 @@ will return raw file contents and no `JSON`.
 ## Download a Package
 
 ```shell
-curl -X GET "http://example.com/orbitapi/package/get?package=example-package&arch=i368&version=1.0.2"
+curl -X GET "http://example.com/orbitapi/package/get?package=example-package&arch=i386&version=1.0.2"
 ```
 
 `GET /orbitapi/package/get`
