@@ -1,14 +1,11 @@
 ---
-title: API Reference
+title: Orbit Protocol Reference
 
 language_tabs: # must be one of https://git.io/vQNgJ
-  - shell
-  - ruby
-  - python
-  - javascript
+  - shell: cURL
 
 toc_footers:
-  - <a href='#'>Sign Up for a Developer Key</a>
+  - <a href='https://github.com/MarsOS'>Package Manager Protocol for MarsOS</a>
   - <a href='https://github.com/tripit/slate'>Documentation Powered by Slate</a>
 
 includes:
@@ -19,221 +16,312 @@ search: true
 
 # Introduction
 
-Welcome to the Kittn API! You can use our API to access Kittn API endpoints, which can get information on various cats, kittens, and breeds in our database.
+should respond. It exists, so that you do not have to use our server to host
+This document specifies the way a package repository for our package manager
+packages because you can create your own compatible servers.
 
-We have language bindings in Shell, Ruby, and Python! You can view code examples in the dark area to the right, and you can switch the programming language of the examples with the tabs in the top right.
+It is important to know, that the server **MUST** respond exactly as required.
+The only possible exception is when you want to add additional fields to the
+response. But you need to be carefull, future specifications of this protocol
+might use this name, so we suggest prefixing your fields with a more or less
+unique vendor prefix.
 
-This example API documentation page was created with [Slate](https://github.com/tripit/slate). Feel free to edit it and use it as a base for your own API's documentation.
+All API responses will be encoded in [JSON](json.org)
 
-# Authentication
+Current version of the Specification: **1**
 
-> To authorize, use this code:
+### Base Endpoint
 
-```ruby
-require 'kittn'
+`GET http://example.com/orbitapi/`
 
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-```
+where `http://example.com` will be replaced with your url as specified by
+the client.
 
-```python
-import kittn
 
-api = kittn.authorize('meowmeowmeow')
-```
+# Server Information
 
 ```shell
-# With shell, you can just pass the correct header with each request
-curl "api_endpoint_here"
-  -H "Authorization: meowmeowmeow"
+curl -X GET "http://example.com/orbitapi/info"
 ```
 
-```javascript
-const kittn = require('kittn');
+```json
+{
+  "name": "name-of-your-server",
+  "email": "webmaster@your-server.com",
+  "canSearch": true,
+  "canMeta": true,
+  "specVersion": 1
+}
+```
+> Please note, that the name field should only contain letters, digits and dashes
 
-let api = kittn.authorize('meowmeowmeow');
+`GET /orbitapi/info`
+
+Returns a ServerSpec object as shown. This will be used to ensure
+compatability between server and client.
+So a client should make sure that the server is using the right protocol.
+
+## Geo Information
+
+```shell
+curl -X GET "http://example.com/orbitapi/info/geo"
 ```
 
-> Make sure to replace `meowmeowmeow` with your API key.
+```json
+{
+  "country": "USA",
+  "state": "New York",
+  "city": "New York City",
+  "zip": "10004"
+}
+```
+> This is the only response, where only the `country` field is required, the others
+> need to exist, but can be empty as they are only used to give information to a
+> user, but will not be used by any form of algorithm.
 
-Kittn uses API keys to allow access to the API. You can register a new Kittn API key at our [developer portal](http://example.com/developers).
+> The country field is encoded in the three letter [ISO 3166 (ALPHA-3)](https://en.wikipedia.org/wiki/ISO_3166-1) standard.
 
-Kittn expects for the API key to be included in all API requests to the server in a header that looks like the following:
+`GET /orbitapi/info/geo`
 
-`Authorization: meowmeowmeow`
+Returns a GeoInfo object which will contain information about the servers location,
+this is usefull to find servers closer to the user, which should normaly improve
+connection speed and should help to spread the load on the servers.
+
+## Server Statistics
+
+```shell
+curl -X GET "http://example.com/orbitapi/info/stats"
+```
+
+```json
+{
+  "uniquePackages": 42,
+  "uptime": 86400,
+  "availableArches": [
+    "amd64",
+    "i368"
+  ],
+  "arches": {
+    "amd64": {
+      "packages": 84,
+      "uniquePackages": 42,
+    },
+    "i368": {
+      "packages": 80,
+      "uniquePackages": 40,
+    }
+  }
+}
+```
+> uptime in seconds, all arches in `availableArches` **MUST** have an entry in the
+> `arches` object.
+
+`GET /orbitapi/info/stats`
+
+Returns a ServerStats object. It will contain some basic status information about
+your server, including the number of packages or the supported hardware platforms.
 
 <aside class="notice">
-You must replace <code>meowmeowmeow</code> with your personal API key.
+A Server will contain multiple versions of a package and maybe even host the same
+version for multiple architectures.
+So if a package is hosted in five different variants, that this should count as
+one unique and five total packages.
 </aside>
 
-# Kittens
-
-## Get All Kittens
-
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.get
-```
-
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-api.kittens.get()
-```
-
+# Package Search
 ```shell
-curl "http://example.com/api/kittens"
-  -H "Authorization: meowmeowmeow"
+curl -X GET "http://example.com/orbitapi/search?name=example&author=john"
 ```
-
-```javascript
-const kittn = require('kittn');
-
-let api = kittn.authorize('meowmeowmeow');
-let kittens = api.kittens.get();
-```
-
-> The above command returns JSON structured like this:
-
 ```json
-[
-  {
-    "id": 1,
-    "name": "Fluffums",
-    "breed": "calico",
-    "fluffiness": 6,
-    "cuteness": 7
+{
+  "query": {
+    "regex": "true",
+    "name": "example",
+    "author": "john",
+    "spec": " ",
+    "version": " "
   },
-  {
-    "id": 2,
-    "name": "Max",
-    "breed": "unknown",
-    "fluffiness": 5,
-    "cuteness": 10
-  }
-]
+  "results": [
+    "example-package",
+    "libexample",
+    "other-by-doe"
+  ]
+}
 ```
+> The results array should contain every matching package name exactly one time
 
-This endpoint retrieves all kittens.
+`GET /orbitapi/search`
 
-### HTTP Request
+Returns the parameters of the search as well as an array of matching package
+names.
 
-`GET http://example.com/api/kittens`
+<aside class="warning">
+If a package exists in different variants, it will still only be included once,
+so make sure to check the package meta data for a match if you need more
+information about it.
+</aside>
 
-### Query Parameters
+### URL Paramters
 
 Parameter | Default | Description
---------- | ------- | -----------
-include_cats | false | If set to true, the result will also include cats.
-available | true | If set to false, the result will include kittens that have already been adopted.
+----------|---------|---------
+regex | `true` | if true, all other parameters will be used as regex
+name | ` ` | package name
+author  | ` ` | author/Packager name
+version  | ` ` | package version
+arch | ` ` | package architecture
 
-<aside class="success">
-Remember — a happy kitten is an authenticated kitten!
+
+# Metadata
+
+```shell
+curl -X GET "http://example.com/orbitapi/meta?package=example-package"
+```
+
+```json
+{
+  "package": "example-package",
+  "arches": ["amd64", "i368"],
+  "versions": {
+    "amd64": ["1.0.0", "1.0.2"],
+    "i368": ["1.0.0", "1.0.2", "1.0.2-1"]
+  }
+}
+```
+
+`GET /orbitapi/meta`
+
+Returns meta information about a package. Use this to check if a version you need
+is available.
+
+<aside class="notice">
+Please note, that the Metadata query can be splitted to only contain curtain parts
+of the PackageMeta object to save bandwith and/or parsing time.
 </aside>
 
-## Get a Specific Kitten
+<aside class="warning">
+To save a lot of work for the server, the package size information is not included
+in the root meta query, use the size query to get this for every version.
+</aside>
 
-```ruby
-require 'kittn'
+### Required Parameters
 
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.get(2)
-```
+Parameter | Description
+----------|---------
+name | package name you want to query
 
-```python
-import kittn
 
-api = kittn.authorize('meowmeowmeow')
-api.kittens.get(2)
-```
+## Available Arches
 
 ```shell
-curl "http://example.com/api/kittens/2"
-  -H "Authorization: meowmeowmeow"
+curl -X GET "http://example.com/orbitapi/meta/arches?package=example-package"
 ```
 
-```javascript
-const kittn = require('kittn');
+```json
+["amd64", "i368"]
+```
+> For the above example of `example-package`
 
-let api = kittn.authorize('meowmeowmeow');
-let max = api.kittens.get(2);
+`GET /orbitapi/meta/arches`
+
+Only returns an array of all Available architecture for this package.
+
+### Required Parameters
+
+Parameter | Description
+----------|---------
+name | package name you want to query
+
+
+## Available Versions
+
+```shell
+curl -X GET "http://example.com/orbitapi/meta/versions?package=example-package&arch=i368"
 ```
 
-> The above command returns JSON structured like this:
+```json
+["1.0.0", "1.0.2", "1.0.2-1"]
+```
+> For the above example of `example-package` with `arch=i368`
+
+`GET /orbitapi/meta/versions`
+
+Returns an array of versions for this package on a specified architecture.
+
+### Required Parameters
+
+Parameter | Description
+----------|---------
+name | package name you want to query
+arch | requested architecture
+
+
+## Package Size
+
+```shell
+curl -X GET "http://example.com/orbitapi/meta/versions?package=example-package&arch=i368&version=1.0.2"
+```
 
 ```json
 {
-  "id": 2,
-  "name": "Max",
-  "breed": "unknown",
-  "fluffiness": 5,
-  "cuteness": 10
+  "downloadSize": 640,
+  "rootSize": 820
 }
 ```
+> Units in KB
 
-This endpoint retrieves a specific kitten.
+`GET /orbitapi/meta/size`
 
-<aside class="warning">Inside HTML code blocks like this one, you can't use Markdown, so use <code>&lt;code&gt;</code> blocks to denote code.</aside>
+Return size information for the specified package. Download size represents the
+total size of the package while the root Size represents the size of the files
+that will be installed.
 
-### HTTP Request
+<aside class="notice">
+The total install size is slightly bigger than rootSize because the client will
+create some database entries.
+</aside>
 
-`GET http://example.com/kittens/<ID>`
-
-### URL Parameters
+### Required Parameters
 
 Parameter | Description
---------- | -----------
-ID | The ID of the kitten to retrieve
+----------|---------
+name | package name you want to query
+arch | requested architecture
+version | requested version
 
-## Delete a Specific Kitten
 
-```ruby
-require 'kittn'
+# Package Download
 
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.delete(2)
-```
+You can either download the prebuild packages or download the blueprint file which
+will act as a 'manual' on how to build the package from source.
 
-```python
-import kittn
+Please note, that all requests to the childs of the `/orbitapi/package/` endpoint
+will return raw file contents and no `JSON`.
 
-api = kittn.authorize('meowmeowmeow')
-api.kittens.delete(2)
-```
+## Download a Package
 
 ```shell
-curl "http://example.com/api/kittens/2"
-  -X DELETE
-  -H "Authorization: meowmeowmeow"
+curl -X GET "http://example.com/orbitapi/package/get?package=example-package&arch=i368&version=1.0.2"
 ```
 
-```javascript
-const kittn = require('kittn');
+`GET /orbitapi/package/get`
 
-let api = kittn.authorize('meowmeowmeow');
-let max = api.kittens.delete(2);
-```
-
-> The above command returns JSON structured like this:
-
-```json
-{
-  "id": 2,
-  "deleted" : ":("
-}
-```
-
-This endpoint retrieves a specific kitten.
-
-### HTTP Request
-
-`DELETE http://example.com/kittens/<ID>`
-
-### URL Parameters
+### Required Parameters
 
 Parameter | Description
---------- | -----------
-ID | The ID of the kitten to delete
+----------|---------
+name | package name you want to Download
+arch | requested architecture
+version | requested version
 
+## Download a blueprint
+
+```shell
+curl -X GET "http://example.com/orbitapi/package/blueprint?package=example-package"
+```
+
+`GET /orbitapi/package/blueprint`
+
+Parameter | Description
+----------|---------
+name | package name you want the blueprint of
