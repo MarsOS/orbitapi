@@ -16,7 +16,8 @@ search: true
 
 # Introduction
 
-should respond. It exists, so that you do not have to use our server to host
+This document describes how the orbit server should respond.
+It exists, so that you do not have to use our server to host
 This document specifies the way a package repository for our package manager
 packages because you can create your own compatible servers.
 
